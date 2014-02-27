@@ -1,11 +1,13 @@
 # -*- encoding: utf-8 -*-
 
+require 'sms_fu/version'
+
 Gem::Specification.new do |s|
   s.name = %q{sms_fu}
-  s.version = "1.1.1"
+  s.version = SMSFu::VERSION
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Brendan G. Lim"]
+  s.authors = ["Brendan G. Lim", "Stephen Chudleigh"]
   s.date = %q{2010-08-23}
   s.description = %q{SMS Fu allows you to send text messages to a mobile recipient for free.  It leverages ActionMailer or Pony for delivery of text messages through e-mail.}
   s.email = %q{brendangl@gmail.com}
@@ -22,6 +24,7 @@ Gem::Specification.new do |s|
      "lib/sms_fu/sms_fu.rb",
      "lib/sms_fu/sms_fu_helper.rb",
      "lib/sms_fu/sms_notifier.rb",
+     "lib/sms_fu/version.rb",
      "sms_fu.gemspec",
      "tasks/sms_fu_tasks.rake",
      "templates/sms_fu.yml",
