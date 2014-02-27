@@ -36,7 +36,7 @@ module SMSFu
     # Delivers the SMS message in the form of an e-mail
     #   sms_fu.deliver("1234567890","at&t","hello world")
     def deliver(number, carrier, message, options = {})
-      raise SMSFuException.new("Can't deliver blank message to #{format_number(number)}") if message.nil? || message.empty?
+      raise SMSFuException.new("Can't deliver blank message to #{SMSFu.format_number(number)}") if message.nil? || message.empty?
 
       limit   = options[:limit] || !options[:mms_enabled] && 240
       from    = options[:from] || SMSFu.from_address
@@ -88,14 +88,14 @@ module SMSFu
       format_number(number) + carrier_email(carrier.downcase, mms_enabled)
     end
 
-    protected
-
     def format_number(number)
       stripped = number.gsub("-","").strip
       formatted = (stripped.length == 11 && stripped[0,1] == "1") ? stripped[1..stripped.length] : stripped
       raise SMSFuException.new("Number (#{number}) is not formatted correctly") unless valid_number?(formatted)
       formatted
     end
+
+    protected
 
     def valid_number?(number)
       number.length >= 10 && number[/^.\d+$/]
