@@ -18,6 +18,7 @@ module SMSFu
       new(opts)
     end
 
+    # defaults to action_mailer delivery
     def initialize(opts = {})
       self.delivery     = opts[:delivery] && opts[:delivery].to_sym || :action_mailer
       self.pony_config  = opts[:pony_config]

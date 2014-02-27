@@ -1,5 +1,9 @@
 require 'action_mailer'
-require 'pony'
+begin
+  require 'pony'
+rescue LoadError
+  puts 'pony is not installed'
+end
 require 'yaml'
 
 require 'sms_fu/sms_fu'
