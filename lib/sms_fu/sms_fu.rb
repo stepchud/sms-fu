@@ -4,14 +4,14 @@ module SMSFu
     attr_accessor :delivery, :pony_config
 
     # Sets up a new SMSFu::Client.  Allows for use of ActionMailer or
-    # Pony for e-mail delivery.  Pony requires :pony_config to be 
+    # Pony for e-mail delivery.  Pony requires :pony_config to be
     # defined to work properly.
-    # 
+    #
     # * ActionMailer 3
     #   sms_fu = SMSFu::Client.configure(:delivery => :action_mailer)
     #
     # * Pony 1.0
-    #   sms_fu = SMSFu::Client.configure(:delivery => :pony, 
+    #   sms_fu = SMSFu::Client.configure(:delivery => :pony,
     #      :pony_config => { :via => :sendmail })
     #
     def self.configure(opts = {})
@@ -19,7 +19,7 @@ module SMSFu
     end
 
     def initialize(opts = {})
-      self.delivery     = opts[:delivery].to_sym
+      self.delivery     = opts[:delivery] && opts[:delivery].to_sym || :action_mailer
       self.pony_config  = opts[:pony_config]
       raise SMSFuException.new("Pony configuration required") if @delivery == :pony && @pony_config.nil?
     end
@@ -37,7 +37,7 @@ module SMSFu
     def deliver(number, carrier, message, options = {})
       raise SMSFuException.new("Can't deliver blank message to #{format_number(number)}") if message.nil? || message.empty?
 
-      limit   = options[:limit] || message.length
+      limit   = options[:limit] || !options[:mms_enabled] && 240
       from    = options[:from] || SMSFu.from_address
       message = message[0..limit-1]
       email   = SMSFu.sms_address(number,carrier)
@@ -49,18 +49,18 @@ module SMSFu
       end
     end
   end
-  
+
   class << self
     def config_yaml
       @@config_yaml ||= YAML::load(File.open("#{template_directory}/sms_fu.yml"))
     end
-  
+
     # Returns back a list of all carriers
     #   SMSFu.carriers
     def carriers
-      config_yaml['carriers'] 
+      config_yaml['carriers']
     end
-  
+
     def from_address
       config_yaml['config']['from_address']
     end
@@ -68,11 +68,13 @@ module SMSFu
     def carrier_name(key)
       carrier(key)['name']
     end
-  
-    def carrier_email(key)
-      carrier(key.downcase)['value']
+
+    def carrier_email(key,mms_enabled=false)
+      mms_enabled ?
+        carrier(key.downcase)['mms'] :
+        carrier(key.downcase)['value']
     end
-    
+
     def carrier(key)
       raise SMSFuException.new("Carrier (#{key}) is not supported") unless SMSFu.carriers.has_key?(key.downcase)
       carriers[key]
@@ -80,9 +82,9 @@ module SMSFu
 
     # Returns back a properly formatted SMS e-mail address
     #   SMSFu.sms_address("1234567890","at&t")
-    def sms_address(number,carrier)
+    def sms_address(number,carrier,mms_enabled=false)
       raise SMSFuException.new("Missing number or carrier") if number.nil? || carrier.nil?
-      format_number(number) + carrier_email(carrier.downcase)
+      format_number(number) + carrier_email(carrier.downcase, mms_enabled)
     end
 
     protected
@@ -96,10 +98,10 @@ module SMSFu
 
     def valid_number?(number)
       number.length >= 10 && number[/^.\d+$/]
-    end  
+    end
 
     def template_directory
-      directory = defined?(Rails) ? "#{RAILS_ROOT}/config" : "#{File.dirname(__FILE__)}/../../templates"
+      directory = defined?(Rails) ? "#{Rails.root}/config" : "#{File.dirname(__FILE__)}/../../templates"
       if (defined?(Rails) && Rails.env == 'test') || (defined?(RAILS_ENV) && RAILS_ENV == 'test)')
         "#{File.dirname(__FILE__)}/../../templates"
       else
