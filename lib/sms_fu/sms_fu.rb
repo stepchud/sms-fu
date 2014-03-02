@@ -1,7 +1,7 @@
 module SMSFu
   class Client
     DELIVERY_METHODS = [:action_mailer, :pony]
-    attr_accessor :delivery, :pony_config
+    attr_accessor :delivery, :pony_config, :from_address
 
     # Sets up a new SMSFu::Client.  Allows for use of ActionMailer or
     # Pony for e-mail delivery.  Pony requires :pony_config to be
@@ -22,6 +22,7 @@ module SMSFu
     def initialize(opts = {})
       self.delivery     = opts[:delivery] && opts[:delivery].to_sym || :action_mailer
       self.pony_config  = opts[:pony_config]
+      self.from_address = opts[:from_address] || SMSFu.from_address
       raise SMSFuException.new("Pony configuration required") if @delivery == :pony && @pony_config.nil?
     end
 
@@ -39,14 +40,13 @@ module SMSFu
       raise SMSFuException.new("Can't deliver blank message to #{SMSFu.format_number(number)}") if message.nil? || message.empty?
 
       limit   = options[:limit] || !options[:mms_enabled] && 240
-      from    = options[:from] || SMSFu.from_address
       message = message[0..limit-1]
       email   = SMSFu.sms_address(number,carrier)
 
       if @delivery == :pony
-        Pony.mail({:to => email, :body => message, :from => from}.merge!(@pony_config))
+        Pony.mail({:to => email, :body => message, :from => from_address}.merge!(@pony_config))
       else
-        SMSNotifier.send_sms(email, message, from).deliver
+        SMSNotifier.send_sms(email, message, from_address).deliver
       end
     end
   end
@@ -63,7 +63,11 @@ module SMSFu
     end
 
     def from_address
-      config_yaml['config']['from_address']
+      @@from_address ||= config_yaml['config']['from_address']
+    end
+
+    def from_address=(from)
+      @@from_address=from
     end
 
     def carrier_name(key)
